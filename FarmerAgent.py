@@ -1,41 +1,73 @@
 from mesa import Agent
 from CropAgent import CropAgent
+import random
 
 class FarmerAgent(Agent):
-    """Handles planting, watering, and harvesting crops."""
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
-        self.pos = None
+        self.crop_types = ["potato", "tomato", "cucumber"]
+        self.crop_strategy = "diverse"  # Can be modified to "specialized" later
 
     def step(self):
-        """Perform actions based on current weather."""
+        # Harvest all mature crops in the territory
+        for pos in self.territory:
+            cell_contents = self.model.grid.get_cell_list_contents([pos])
+            for agent in cell_contents[:]:  # Iterate over a copy to allow removal
+                if isinstance(agent, CropAgent) and agent.is_mature():
+                    self.model.grid.remove_agent(agent)
+                    self.model.schedule.remove(agent)
+                    print(f"Farmer {self.unique_id} harvested {agent.crop_type} at {pos}")
+
+        # Water all crops in the territory
         weather = self.model.current_weather
-        cell_content = self.model.grid.get_cell_list_contents([self.pos])
-        crops = [agent for agent in cell_content if isinstance(agent, CropAgent)]
+        for pos in self.territory:
+            cell_contents = self.model.grid.get_cell_list_contents([pos])
+            for agent in cell_contents:
+                if isinstance(agent, CropAgent) and agent.water_received < agent.water_needs:
+                    water_amount = self.get_water_amount(weather)
+                    agent.water_received += water_amount
+                    print(f"Farmer {self.unique_id} watered {agent.crop_type} at {pos} (+{water_amount})")
 
-        if not crops:
-            self.plant_crop()
+        # Plant crops in all empty positions in the territory
+        for pos in self.territory:
+            cell_contents = self.model.grid.get_cell_list_contents([pos])
+            if not any(isinstance(agent, CropAgent) for agent in cell_contents):
+                self.plant_crop(pos)
+
+    def get_water_amount(self, weather):
+        # Returns water amount based on weather conditions
+        return {
+            "rain": 3,
+            "sun": 2,
+            "cloudy": 1,
+            "stormy": 0
+        }.get(weather, 1)
+
+    def plant_crop(self, pos):
+        # Select crop type based on planting strategy
+        if self.crop_strategy == "diverse":
+            crop_type = random.choice(self.crop_types)
+        elif self.crop_strategy == "specialized":
+            # Example specialization logic (could be randomized or based on other factors)
+            crop_type = "potato"  # This would need more sophisticated logic
         else:
-            for crop in crops:
-                if crop.is_mature():
-                    self.model.grid.remove_agent(crop)
-                    self.model.schedule.remove(crop)
-                    print(f"Farmer {self.unique_id} harvested at {self.pos}.")
-                    self.plant_crop()
-                else:
-                    # Water the crop
-                    if weather == "rain":
-                        crop.water_received += 3
-                    elif weather == "sun":
-                        crop.water_received += 2
-                    elif weather == "cloudy":
-                        crop.water_received += 1
-                    else:
-                        crop.water_received += 1  # Stormy
-                    print(f"Farmer {self.unique_id} watered at {self.pos}.")
+            crop_type = random.choice(self.crop_types)
 
-    def plant_crop(self):
-        new_crop = CropAgent(self.model.next_id(), self.model, "wheat")
-        self.model.grid.place_agent(new_crop, self.pos)
+        new_crop = CropAgent(
+            self.model.next_id(),
+            self.model,
+            crop_type
+        )
+        self.model.grid.place_agent(new_crop, pos)
         self.model.schedule.add(new_crop)
-        print(f"Farmer {self.unique_id} planted new wheat at {self.pos}.")
+        print(f"Farmer {self.unique_id} planted {crop_type} at {pos}")
+
+    def move(self):
+        # Optional movement logic (if needed)
+        neighbors = self.model.grid.get_neighborhood(
+            self.pos,
+            moore=True,
+            include_center=False
+        )
+        new_position = self.random.choice(neighbors)
+        self.model.grid.move_agent(self, new_position)
