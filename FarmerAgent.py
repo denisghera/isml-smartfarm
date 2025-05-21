@@ -15,8 +15,15 @@ class FarmerAgent(Agent):
         self.total_crops_harvested = 0
         self.total_crops_spoiled = 0
         self.total_crops_destroyed = 0
+        self.total_water = 0
 
     def step(self):
+        forecast = self.model.weather_forecast  # list of upcoming days ["sun", "rain", "cloudy", "stormy"]
+        current_weather = self.model.current_weather
+
+        # Analyze forecast: is there a storm soon?
+        storm_soon = "stormy" in forecast[:1] # Storm expected in the next 2 days
+
         # Remove spoiled or harvested crops
         for pos in self.territory:
             cell_contents = self.model.grid.get_cell_list_contents([pos])
@@ -38,30 +45,34 @@ class FarmerAgent(Agent):
                             self.total_crops_spoiled += 1
                             print(f"Farmer {self.unique_id} removed overwatered {agent.crop_type} at {pos}")
 
-        # Water all crops in the territory
-        weather = self.model.current_weather
+        # Water crops smarter
         for pos in self.territory:
             cell_contents = self.model.grid.get_cell_list_contents([pos])
             for agent in cell_contents:
-                if isinstance(agent, CropAgent) and agent.water_received < agent.water_needs:
-                    water_amount = self.get_water_amount(weather)
-                    agent.water_received += water_amount
-                    print(f"Farmer {self.unique_id} watered {agent.crop_type} at {pos} (+{water_amount})")
+                if isinstance(agent, CropAgent) and agent.water_received < agent.water_needs and not agent.spoiled:
+                    water_amount = 0
+                    # Decision logic for watering amount:
+                    if current_weather in ["rain", "stormy"]:
+                        water_amount = 0 if self.model.watering_strategy == "Conserve Water" else 1
+                    elif current_weather in ["sun", "cloudy"]:
+                        water_amount = 1
 
-        # Plant crops in all empty positions in the territory
+                    agent.water_received += water_amount
+                    if water_amount > 0:
+                        self.total_water += water_amount
+                        print(f"Farmer {self.unique_id} watered {agent.crop_type} at {pos} ({agent.water_received} / {agent.water_needs})")
+
+        # Planting decision - if storm is soon, maybe hold planting to avoid loss of seeds
         for pos in self.territory:
             cell_contents = self.model.grid.get_cell_list_contents([pos])
-            if not any(isinstance(agent, CropAgent) for agent in cell_contents):
-                self.plant_crop(pos)
+            empty = not any(isinstance(agent, CropAgent) for agent in cell_contents)
 
-    def get_water_amount(self, weather):
-        # Returns water amount based on weather conditions
-        return {
-            "rain": 3,
-            "sun": 2,
-            "cloudy": 1,
-            "stormy": 0
-        }.get(weather, 1)
+            if empty:
+                if storm_soon and self.model.planting_strategy == "Skip Before Storm":
+                    print(f"Farmer {self.unique_id} delays planting at {pos} due to upcoming storm")
+                    continue  # skip planting this turn to save seeds
+
+                self.plant_crop(pos)
 
     def plant_crop(self, pos):
         crop_type = random.choice(self.crop_types)
@@ -70,13 +81,3 @@ class FarmerAgent(Agent):
         self.model.schedule.add(new_crop)
         self.total_crops_planted += 1
         print(f"Farmer {self.unique_id} planted {crop_type} at {pos}")
-
-    def move(self):
-        # Optional movement logic (if needed)
-        neighbors = self.model.grid.get_neighborhood(
-            self.pos,
-            moore=True,
-            include_center=False
-        )
-        new_position = self.random.choice(neighbors)
-        self.model.grid.move_agent(self, new_position)

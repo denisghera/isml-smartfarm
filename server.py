@@ -1,6 +1,6 @@
 from mesa.visualization.modules import CanvasGrid, TextElement
 from mesa.visualization.ModularVisualization import ModularServer
-from mesa.visualization.UserParam import Slider
+from mesa.visualization.UserParam import Slider, Choice
 
 from FarmModel import FarmModel
 from FarmerAgent import FarmerAgent
@@ -35,6 +35,7 @@ class FarmStatsElement(TextElement):
             f"<th style='{header_style}'>Harvested</th>"
             f"<th style='{header_style}'>Spoiled</th>"
             f"<th style='{header_style}'>Destroyed</th>"
+            f"<th style='{header_style}'>Water</th>"
             "</tr>"
         )
 
@@ -50,6 +51,7 @@ class FarmStatsElement(TextElement):
                     f"<td style='{cell_style}'>{agent.total_crops_harvested}</td>"
                     f"<td style='{cell_style}'>{agent.total_crops_spoiled}</td>"
                     f"<td style='{cell_style}'>{agent.total_crops_destroyed}</td>"
+                    f"<td style='{cell_style}'>{agent.total_water}</td>"
                     "</tr>"
                 )
 
@@ -94,6 +96,16 @@ server = ModularServer(
     {
         "N": Slider("Number of Farmers", 2, 1, 10, 1),
         "W": Slider("Number of Weather Agents", 1, 1, 3, 1),
+        "watering_strategy": Choice(
+            "Watering Strategy",
+            value="Water Daily",
+            choices=["Water Daily", "Conserve Water"]
+        ),
+        "planting_strategy": Choice(
+            "Planting Strategy",
+            value="Plant Daily",
+            choices=["Plant Daily", "Skip Before Storm"]
+        ),
     }
 )
 

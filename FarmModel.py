@@ -5,13 +5,15 @@ from WeatherAgent import WeatherAgent
 from FarmerAgent import FarmerAgent
 
 class FarmModel(Model):
-    def __init__(self, N, W):
+    def __init__(self, N, W, watering_strategy, planting_strategy):
         super().__init__()
         self.grid = MultiGrid(10, 10, True)
         self.schedule = BaseScheduler(self)
         self.assigned_cells = set()
         self.current_weather = None
         self.weather_forecast = []
+        self.watering_strategy = watering_strategy
+        self.planting_strategy = planting_strategy
 
         # Add WeatherAgents (only one for now)
         for i in range(W):

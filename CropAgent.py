@@ -43,25 +43,28 @@ class CropAgent(Agent):
         weather = self.model.current_weather
         
         # Storm destruction
-        if weather == "stormy" and random.random() < 0.3:
+        if weather == "stormy" and random.random() < 0.1:
             self.spoiled = True
             self.spoil_reason = "storm_destroyed"
             print(f"{self.crop_type} at {self.pos} destroyed by storm")
             return
 
+        # Add natural water from rain
+        if weather == "rain" or weather == "stormy":
+            self.water_received += 1
+            
         # Overwatered
-        if self.water_received > self.water_limit:
+        if self.water_received >= self.water_limit:
             self.spoiled = True
             self.spoil_reason = "overwatered"
-            print(f"{self.crop_type} at {self.pos} spoiled due to overwatering")
+            print(f"{self.crop_type} at {self.pos} spoiled due to overwatering ({self.water_received} / {self.water_limit})")
             return
 
         # Grow if watered enough
         if self.water_received >= self.water_needs:
-            self.growth_stage += 2 if weather == "rain" else 1
+            self.water_received = 0
+            self.growth_stage += 1
             self.growth_stage = min(self.growth_stage, self.max_growth_stage)
-
-        self.water_received = 0
 
     def is_mature(self):
         return self.growth_stage >= self.max_growth_stage

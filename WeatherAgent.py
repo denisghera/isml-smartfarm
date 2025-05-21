@@ -5,8 +5,10 @@ class WeatherAgent(Agent):
     """Simulates changing weather conditions and maintains a 3-day forecast."""
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
-        self.current_weather = random.choice(["rain", "sun", "cloudy", "stormy"])
-        self.forecast = [random.choice(["rain", "sun", "cloudy", "stormy"]) for _ in range(3)]
+        weather_types = ["rain", "sun", "cloudy", "stormy"]
+        weights = [0.3, 0.3, 0.3, 0.1]  # stormy is less common
+        self.current_weather = random.choices(weather_types, weights=weights, k=1)[0]
+        self.forecast = random.choices(weather_types, weights=weights, k=3)
 
     def step(self):
         # Shift forecast: today becomes current, new weather added
