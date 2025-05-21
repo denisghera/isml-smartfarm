@@ -11,6 +11,7 @@ class FarmModel(Model):
         self.grid = MultiGrid(10, 10, True)
         self.current_weather = None
         self.schedule = BaseScheduler(self)
+        self.assigned_cells = set()
 
         # Add WeatherAgents
         for i in range(W):
@@ -21,18 +22,38 @@ class FarmModel(Model):
         for i in range(N):
             farmer = FarmerAgent(i, self)
             self.schedule.add(farmer)
-            x = self.random.randrange(self.grid.width)
-            y = self.random.randrange(self.grid.height)
-            self.grid.place_agent(farmer, (x, y))
-            # Define 3x3 territory
-            territory = []
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < self.grid.width and 0 <= ny < self.grid.height:
-                        territory.append((nx, ny))
+
+            max_attempts = 100
+            attempts = 0
+            # Find a position with a non-overlapping 3x3 territory
+            while attempts < max_attempts:
+                x = self.random.randrange(self.grid.width)
+                y = self.random.randrange(self.grid.height)
+                territory = []
+                overlap = False
+                for dx in [-1, 0, 1]:
+                    for dy in [-1, 0, 1]:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < self.grid.width and 0 <= ny < self.grid.height:
+                            if (nx, ny) in self.assigned_cells:
+                                overlap = True
+                                break
+                            territory.append((nx, ny))
+                    if overlap:
+                        break
+                if not overlap:
+                    break  # Found a valid territory
+                attempts += 1
+
+            if attempts == max_attempts:
+                print(f"Could not place farmer {i} without overlap after {max_attempts} attempts.")
+                continue
+
+            # Assign and track territory
             farmer.territory = territory
-            print(f"Farmer {farmer.unique_id} placed at ({x}, {y}) with territory")
+            self.assigned_cells.update(territory)
+            self.grid.place_agent(farmer, (x, y))
+            print(f"Farmer {farmer.unique_id} placed at ({x}, {y}) with territory: {territory}")
 
     def step(self):
         # Weather phase: Determine today's weather

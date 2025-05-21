@@ -7,6 +7,7 @@ class FarmerAgent(Agent):
         super().__init__(unique_id, model)
         self.crop_types = ["potato", "tomato", "cucumber"]
         self.crop_strategy = "diverse"  # Can be modified to "specialized" later
+        self.territory = []
 
     def step(self):
         # Harvest all mature crops in the territory
