@@ -15,6 +15,48 @@ class ForecastDisplay(TextElement):
     def render(self, model):
         return f"Forecast: {model.weather_forecast}"
 
+class FarmStatsElement(TextElement):
+    def render(self, model):
+        style = (
+            "border-collapse: collapse; "
+            "font-family: Arial, sans-serif;"
+        )
+        cell_style = "border: 1px solid black; padding: 6px; text-align: center; word-break: break-word;"
+        header_style = cell_style + "background-color: #f2f2f2; font-weight: bold;"
+
+        html = f"<div style='text-align: center;'>"
+        html += f"<table style='{style}'>"
+        html += (
+            "<tr>"
+            f"<th style='{header_style}'>Farmer ID</th>"
+            f"<th style='{header_style}'>Territory Size</th>"
+            f"<th style='{header_style}'>Position</th>"
+            f"<th style='{header_style}'>Planted</th>"
+            f"<th style='{header_style}'>Harvested</th>"
+            f"<th style='{header_style}'>Spoiled</th>"
+            f"<th style='{header_style}'>Destroyed</th>"
+            "</tr>"
+        )
+
+        for agent in model.schedule.agents:
+            if isinstance(agent, FarmerAgent):
+                positions = ", ".join([f"({x},{y})" for x, y in agent.territory])
+                html += (
+                    "<tr>"
+                    f"<td style='{cell_style}'>{agent.unique_id}</td>"
+                    f"<td style='{cell_style}'>{len(agent.territory)}</td>"
+                    f"<td style='{cell_style}'>{agent.initial_pos}</td>"
+                    f"<td style='{cell_style}'>{agent.total_crops_planted}</td>"
+                    f"<td style='{cell_style}'>{agent.total_crops_harvested}</td>"
+                    f"<td style='{cell_style}'>{agent.total_crops_spoiled}</td>"
+                    f"<td style='{cell_style}'>{agent.total_crops_destroyed}</td>"
+                    "</tr>"
+                )
+
+        html += "</table>"
+        html += "</div>"
+        return html
+
 def agent_portrayal(agent):
     portrayal = {}
     if isinstance(agent, FarmerAgent):
@@ -43,10 +85,11 @@ def agent_portrayal(agent):
 grid = CanvasGrid(agent_portrayal, 10, 10, 500, 500)
 weather_display = WeatherDisplay()
 forecast = ForecastDisplay()
+stats = FarmStatsElement()
 
 server = ModularServer(
     FarmModel,
-    [grid, weather_display, forecast],
+    [grid, weather_display, forecast, stats],
     "Smart Farm Simulation",
     {
         "N": Slider("Number of Farmers", 2, 1, 10, 1),

@@ -34,6 +34,7 @@ class CropAgent(Agent):
 
         self.water_limit = self.water_needs * 1.5  # Max safe water
         self.spoiled = False
+        self.spoil_reason = None
 
     def step(self):
         if self.pos is None or self.spoiled:
@@ -44,12 +45,14 @@ class CropAgent(Agent):
         # Storm destruction
         if weather == "stormy" and random.random() < 0.3:
             self.spoiled = True
+            self.spoil_reason = "storm_destroyed"
             print(f"{self.crop_type} at {self.pos} destroyed by storm")
             return
 
         # Overwatered
         if self.water_received > self.water_limit:
             self.spoiled = True
+            self.spoil_reason = "overwatered"
             print(f"{self.crop_type} at {self.pos} spoiled due to overwatering")
             return
 

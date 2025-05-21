@@ -41,6 +41,7 @@ class FarmModel(Model):
                     if overlap:
                         break
                 if not overlap:
+                    farmer.initial_pos = (x, y)
                     break
                 attempts += 1
 
