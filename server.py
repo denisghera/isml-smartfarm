@@ -96,6 +96,7 @@ server = ModularServer(
     {
         "N": Slider("Number of Farmers", 2, 1, 10, 1),
         "W": Slider("Number of Weather Agents", 1, 1, 3, 1),
+        "t_size" : Slider ("Size of territory", 3, 1, 10, 1),
         "watering_strategy": Choice(
             "Watering Strategy",
             value="Water Daily",

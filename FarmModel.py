@@ -5,7 +5,7 @@ from WeatherAgent import WeatherAgent
 from FarmerAgent import FarmerAgent
 
 class FarmModel(Model):
-    def __init__(self, N, W, watering_strategy, planting_strategy):
+    def __init__(self, N, W, watering_strategy, planting_strategy, t_size):
         super().__init__()
         self.grid = MultiGrid(10, 10, True)
         self.schedule = BaseScheduler(self)
@@ -32,8 +32,9 @@ class FarmModel(Model):
                 y = self.random.randrange(self.grid.height)
                 territory = []
                 overlap = False
-                for dx in [-1, 0, 1]:
-                    for dy in [-1, 0, 1]:
+                half_size = t_size // 2
+                for dx in range(-half_size, half_size + 1):
+                    for dy in range(-half_size, half_size + 1):
                         nx, ny = x + dx, y + dy
                         if 0 <= nx < self.grid.width and 0 <= ny < self.grid.height:
                             if (nx, ny) in self.assigned_cells:
