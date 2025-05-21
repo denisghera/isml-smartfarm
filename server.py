@@ -10,6 +10,10 @@ from WeatherAgent import WeatherAgent
 class WeatherDisplay(TextElement):
     def render(self, model):
         return f"Weather: {model.current_weather}"
+    
+class ForecastDisplay(TextElement):
+    def render(self, model):
+        return f"Forecast: {model.weather_forecast}"
 
 def agent_portrayal(agent):
     portrayal = {}
@@ -38,10 +42,11 @@ def agent_portrayal(agent):
 
 grid = CanvasGrid(agent_portrayal, 10, 10, 500, 500)
 weather_display = WeatherDisplay()
+forecast = ForecastDisplay()
 
 server = ModularServer(
     FarmModel,
-    [grid, weather_display],
+    [grid, weather_display, forecast],
     "Smart Farm Simulation",
     {
         "N": Slider("Number of Farmers", 2, 1, 10, 1),

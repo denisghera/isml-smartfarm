@@ -32,26 +32,41 @@ class CropAgent(Agent):
         self.water_received = 0
         self.color_range = props["color"]
 
-    def step(self):
-        if self.pos:
-            weather = self.model.current_weather
-            if self.water_received >= self.water_needs:
-                if weather == "rain":
-                    self.growth_stage += 2
-                elif weather == "sun":
-                    self.growth_stage += 1
-                elif weather == "cloudy":
-                    self.growth_stage += 1
-                elif weather == "stormy":
-                    self.growth_stage = max(0, self.growth_stage - 1)
-                self.water_received = 0
+        self.water_limit = self.water_needs * 1.5  # Max safe water
+        self.spoiled = False
 
-            self.growth_stage = min(self.max_growth_stage, max(0, self.growth_stage))
+    def step(self):
+        if self.pos is None or self.spoiled:
+            return
+        
+        weather = self.model.current_weather
+        
+        # Storm destruction
+        if weather == "stormy" and random.random() < 0.3:
+            self.spoiled = True
+            print(f"{self.crop_type} at {self.pos} destroyed by storm")
+            return
+
+        # Overwatered
+        if self.water_received > self.water_limit:
+            self.spoiled = True
+            print(f"{self.crop_type} at {self.pos} spoiled due to overwatering")
+            return
+
+        # Grow if watered enough
+        if self.water_received >= self.water_needs:
+            self.growth_stage += 2 if weather == "rain" else 1
+            self.growth_stage = min(self.growth_stage, self.max_growth_stage)
+
+        self.water_received = 0
 
     def is_mature(self):
         return self.growth_stage >= self.max_growth_stage
 
     def get_color(self):
+        if self.spoiled:
+            return "#000000"
+    
         if self.is_mature():
             return self.color_range[1]
         

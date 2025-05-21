@@ -10,6 +10,17 @@ class FarmerAgent(Agent):
         self.territory = []
 
     def step(self):
+        # Remove spoiled or harvested crops
+        for pos in self.territory:
+            cell_contents = self.model.grid.get_cell_list_contents([pos])
+            for agent in cell_contents[:]:
+                if isinstance(agent, CropAgent):
+                    if agent.is_mature() or agent.spoiled:
+                        self.model.grid.remove_agent(agent)
+                        self.model.schedule.remove(agent)
+                        reason = "harvested" if agent.is_mature() else "removed (spoiled)"
+                        print(f"Farmer {self.unique_id} {reason} {agent.crop_type} at {pos}")
+
         # Harvest all mature crops in the territory
         for pos in self.territory:
             cell_contents = self.model.grid.get_cell_list_contents([pos])
@@ -45,20 +56,8 @@ class FarmerAgent(Agent):
         }.get(weather, 1)
 
     def plant_crop(self, pos):
-        # Select crop type based on planting strategy
-        if self.crop_strategy == "diverse":
-            crop_type = random.choice(self.crop_types)
-        elif self.crop_strategy == "specialized":
-            # Example specialization logic (could be randomized or based on other factors)
-            crop_type = "potato"  # This would need more sophisticated logic
-        else:
-            crop_type = random.choice(self.crop_types)
-
-        new_crop = CropAgent(
-            self.model.next_id(),
-            self.model,
-            crop_type
-        )
+        crop_type = random.choice(self.crop_types)
+        new_crop = CropAgent(self.model.next_id(), self.model, crop_type)
         self.model.grid.place_agent(new_crop, pos)
         self.model.schedule.add(new_crop)
         print(f"Farmer {self.unique_id} planted {crop_type} at {pos}")

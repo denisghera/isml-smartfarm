@@ -3,17 +3,17 @@ from mesa.space import MultiGrid
 from mesa.time import BaseScheduler
 from WeatherAgent import WeatherAgent
 from FarmerAgent import FarmerAgent
-from CropAgent import CropAgent
 
 class FarmModel(Model):
     def __init__(self, N, W):
         super().__init__()
         self.grid = MultiGrid(10, 10, True)
-        self.current_weather = None
         self.schedule = BaseScheduler(self)
         self.assigned_cells = set()
+        self.current_weather = None
+        self.weather_forecast = []
 
-        # Add WeatherAgents
+        # Add WeatherAgents (only one for now)
         for i in range(W):
             weather_agent = WeatherAgent(i + 1000, self)
             self.schedule.add(weather_agent)
@@ -25,7 +25,6 @@ class FarmModel(Model):
 
             max_attempts = 100
             attempts = 0
-            # Find a position with a non-overlapping 3x3 territory
             while attempts < max_attempts:
                 x = self.random.randrange(self.grid.width)
                 y = self.random.randrange(self.grid.height)
@@ -42,34 +41,19 @@ class FarmModel(Model):
                     if overlap:
                         break
                 if not overlap:
-                    break  # Found a valid territory
+                    break
                 attempts += 1
 
             if attempts == max_attempts:
                 print(f"Could not place farmer {i} without overlap after {max_attempts} attempts.")
                 continue
 
-            # Assign and track territory
             farmer.territory = territory
             self.assigned_cells.update(territory)
             self.grid.place_agent(farmer, (x, y))
             print(f"Farmer {farmer.unique_id} placed at ({x}, {y}) with territory: {territory}")
 
     def step(self):
-        # Weather phase: Determine today's weather
-        for agent in self.schedule.agents:
-            if isinstance(agent, WeatherAgent):
-                agent.step()
-
-        # Farmers phase: All farmers act
-        for agent in self.schedule.agents:
-            if isinstance(agent, FarmerAgent):
-                agent.step()
-
-        # Crops phase: All crops grow
-        for agent in self.schedule.agents:
-            if isinstance(agent, CropAgent):
-                agent.step()
-
-        self.schedule.steps += 1
+        # Let all agents (including WeatherAgent) take their step
+        self.schedule.step()
         print(f"=== End of Day {self.schedule.steps} ===\n")
