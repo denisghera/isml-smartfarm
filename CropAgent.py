@@ -54,7 +54,7 @@ class CropAgent(Agent):
             self.water_received += 1
             
         # Overwatered
-        if self.water_received >= self.water_limit:
+        if self.water_received > self.water_limit:
             self.spoiled = True
             self.spoil_reason = "overwatered"
             print(f"{self.crop_type} at {self.pos} spoiled due to overwatering ({self.water_received} / {self.water_limit})")

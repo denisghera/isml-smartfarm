@@ -51,11 +51,17 @@ class FarmerAgent(Agent):
             for agent in cell_contents:
                 if isinstance(agent, CropAgent) and agent.water_received < agent.water_needs and not agent.spoiled:
                     water_amount = 0
+                    needed = agent.water_needs - agent.water_received
                     # Decision logic for watering amount:
                     if current_weather in ["rain", "stormy"]:
-                        water_amount = 0 if self.model.watering_strategy == "Conserve Water" else 1
-                    elif current_weather in ["sun", "cloudy"]:
-                        water_amount = 1
+                        if self.model.watering_strategy == "Conserve Water":
+                            water_amount = 0 # Don't water if natural water is available
+                        elif self.model.watering_strategy == "Balanced":
+                            water_amount = 1 if needed > 1 else 0 # Water if possible without overwatering
+                        else:
+                            water_amount = 1 # Water blindly
+                    else:
+                        water_amount = 1 # Water normally
 
                     agent.water_received += water_amount
                     if water_amount > 0:

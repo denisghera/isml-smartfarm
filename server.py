@@ -41,7 +41,6 @@ class FarmStatsElement(TextElement):
 
         for agent in model.schedule.agents:
             if isinstance(agent, FarmerAgent):
-                positions = ", ".join([f"({x},{y})" for x, y in agent.territory])
                 html += (
                     "<tr>"
                     f"<td style='{cell_style}'>{agent.unique_id}</td>"
@@ -55,8 +54,8 @@ class FarmStatsElement(TextElement):
                     "</tr>"
                 )
 
-        html += "</table>"
-        html += "</div>"
+        html += "</table></div>"
+
         return html
 
 def agent_portrayal(agent):
@@ -100,7 +99,7 @@ server = ModularServer(
         "watering_strategy": Choice(
             "Watering Strategy",
             value="Water Daily",
-            choices=["Water Daily", "Conserve Water"]
+            choices=["Water Daily", "Conserve Water", "Balanced"]
         ),
         "planting_strategy": Choice(
             "Planting Strategy",
